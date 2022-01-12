@@ -1,6 +1,3 @@
 __pycache__/
 venv/
-data/*xlsx
-data/*.csv
-data/old/*.csv
-data/old/*.xlsx
+data/
