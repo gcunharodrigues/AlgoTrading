@@ -6,15 +6,17 @@ from scipy import stats
 
 def organize_data(file):
     # Leitura do arquivo CSV extraído do MT5
-    file = 'data/EURUSD_H1_200601020000_201012310000.csv'
     symbol_data = pd.read_csv(file, sep='\t')
 
     # Integrando as colunas <DATE> e <TIME> em uma única coluna Date,e 
     # renomeando as colunas.
-    symbol_data['Date'] = symbol_data['<DATE>'] + ' ' + symbol_data['<TIME>']
-    col = symbol_data.pop('Date')
-    symbol_data.insert(0, "Date", col)
-    symbol_data.drop(['<DATE>','<TIME>'], axis=1, inplace=True)
+    if '<TIME>' in symbol_data:
+        symbol_data['Date'] = symbol_data['<DATE>'] + ' ' + symbol_data['<TIME>']
+        col = symbol_data.pop('Date')
+        symbol_data.insert(0, "Date", col)
+        symbol_data.drop(['<DATE>','<TIME>'], axis=1, inplace=True)
+    else:
+        symbol_data = symbol_data.rename(columns={'<DATE>':'Date'})
 
     symbol_data = symbol_data.rename(columns={
         '<CLOSE>': 'Close', 
@@ -57,31 +59,27 @@ def get_efficiency_ratio(prices, timeperiod=10):
     timeperiod = período de tempo - padrão 10
     retorna array efficieny ratio"""
     # Calcular a diferença entre os preços:
-    close_diff = prices.diff()
+    close_diff = abs(prices.diff())
+    net_change = abs(prices.diff(timeperiod))
     
     # Calcular o efficiency ratio utilizando a fórmula
     # ERt = |P(t) - P(t-n)| /  Sum(i=t-n, i=t)(|P(i) - P(i-1)|)
-    
-    net_change = np.array([])
     sum_change_diff = np.array([])
     sum_change = np.array([])
     for index in range(0, len(close_diff)):
     
-        if index <= 1:
-            sum_change_diff = np.append(sum_change_diff, 0)
+        if index == 0:
+            sum_change_diff = np.append(sum_change_diff, np.nan)
         else:
-            sum_change_diff_aux = abs(close_diff[index] - close_diff[index - 1])
+            sum_change_diff_aux = abs(close_diff[index])
             sum_change_diff = np.append(sum_change_diff, sum_change_diff_aux)
             
-        if index <= timeperiod:
-            net_change = np.append(net_change, np.nan)
+        if index < timeperiod:
             sum_change = np.append(sum_change, np.nan)
         else:
-            net_change_aux = abs(close_diff[index] - close_diff[index - timeperiod])
-            net_change = np.append(net_change, net_change_aux)
             sum_change = np.append(sum_change, 
                                 np.sum(sum_change_diff[index-timeperiod:index+1]))
-        
+            
     efficiency_ratio = net_change / sum_change
     
     return efficiency_ratio
@@ -98,7 +96,7 @@ def get_stats(prices, timeperiod=10):
     skew = np.array([])
     kurt = np.array([])
     for index in range(0, len(prices)):
-        if index <= timeperiod:
+        if index < timeperiod:
             mean = np.append(mean, np.nan)
             std = np.append(std, np.nan)
             skew = np.append(skew, np.nan)
@@ -108,9 +106,18 @@ def get_stats(prices, timeperiod=10):
             mean = np.append(mean, mean_aux)
             std_aux = np.std(prices[index-timeperiod:index+1])
             std = np.append(std, std_aux)
-            skew_aux = stats.skew(prices[index-timeperiod:index+1])
+            skew_aux = stats.skew(prices[index-timeperiod:index+1], 
+                                  bias=False)
             skew = np.append(skew, skew_aux)
-            kurt_aux = stats.kurtosis(prices[index-timeperiod:index+1])
+            kurt_aux = stats.kurtosis(prices[index-timeperiod:index+1], 
+                                      bias=False)
             kurt = np.append(kurt, kurt_aux)
             
     return mean, std, skew, kurt
+
+# Use to tests ->
+if __name__ == "__main__":
+    file='data/PETR4_Daily_202112010000_202201210000.csv'
+    symbol_data = organize_data(file)
+    efficiency_ratio = get_efficiency_ratio(symbol_data['Close'], 20)
+    
