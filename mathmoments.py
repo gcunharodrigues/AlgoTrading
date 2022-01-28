@@ -32,7 +32,7 @@ def mathmoments(array, start, count):
     if data_count > 1:
         for i in range(ind1, ind2+1):
             variance += (array[i] - mean)**2
-        variance = variance / (data_count - 1)
+        variance = variance / (data_count)
         S = sqrt(variance)
     else:
         variance = math.nan
@@ -40,7 +40,7 @@ def mathmoments(array, start, count):
     if data_count > 2 and S > 0:
         for i in range(ind1, ind2+1):
             skewness += (array[i] - mean)**3
-        skewness = skewness / (data_count - 1)
+        skewness = skewness / (data_count)
         skewness = skewness / (S**3)
     else:
         skewness = math.nan
@@ -48,7 +48,7 @@ def mathmoments(array, start, count):
     if data_count > 3 and S > 0:
         for i in range(ind1, ind2+1):
             kurtosis += (array[i] - mean)**4
-        kurtosis = kurtosis / (data_count - 1)
+        kurtosis = kurtosis / (data_count)
         kurtosis = kurtosis / (S**4)
         kurtosis = kurtosis - 3
     else:
