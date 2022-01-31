@@ -18,6 +18,7 @@ def send_historic_data(MT4_files_dir, symbol, timeframe, start, end):
     dwx.get_historic_data(symbol, timeframe, start, end)
     sleep(10)
     for st in dwx.historic_data.keys():
+        print(st)
         on_historic_data(symbol, timeframe, dwx.historic_data[st])
         historic_data_list = []
         for k, v in dwx.historic_data[st].items():
