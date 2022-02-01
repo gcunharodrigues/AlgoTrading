@@ -12,11 +12,11 @@ from api.dwx_client import dwx_client
 
 # Função para obter os dados históricos.
 
-def send_historic_data(MT4_files_dir, symbol, timeframe, start, end):
+def inform_historic_data(MT4_files_dir, symbol, timeframe, start, end):
     dwx = dwx_client(metatrader_dir_path=MT4_files_dir)
     sleep(1)
     dwx.get_historic_data(symbol, timeframe, start, end)
-    sleep(10)
+    sleep(5)
     for st in dwx.historic_data.keys():
         print(st)
         on_historic_data(symbol, timeframe, dwx.historic_data[st])
@@ -28,6 +28,7 @@ def send_historic_data(MT4_files_dir, symbol, timeframe, start, end):
                 historic_time_list.append(dwx.historic_data[st][k][data])
             
             historic_data_list.append(historic_time_list)
+    dwx.stop()
 
     return historic_data_list
                 
@@ -40,11 +41,11 @@ def on_historic_data(symbol, time_frame, data):
 
 # MT4_files_dir = 'C:/Users/guicr/AppData/Roaming/MetaQuotes/Terminal/'\
 #                 'D0E8209F77C8CF37AD8BF550E51FF075/MQL5/Files/'
-# MT4_files_dir = '/home/gcunharodrigues/.wine/drive_c/Program Files/MetaTrader 5/MQL5/Files/'
-# symbol = 'WIN$'
-# timeframe = 'H4'
-# start = datetime(2020, 1, 1).timestamp()
-# end = datetime(2020, 1, 3).timestamp()
+# # MT4_files_dir = '/home/gcunharodrigues/.wine/drive_c/Program Files/MetaTrader 5/MQL5/Files/'
+# symbol = 'Bra50Feb22'
+# timeframe = 'H1'
+# start = datetime(2022, 1, 1).timestamp()
+# end = datetime(2022, 1, 29).timestamp()
 
-# historic_data = send_historic_data(MT4_files_dir, symbol, timeframe, start, end)
+# historic_data = inform_historic_data(MT4_files_dir, symbol, timeframe, start, end)
 # print(historic_data)

@@ -5,6 +5,8 @@ from sklearn.decomposition import TruncatedSVD
 import talib
 from scipy import stats
 from mathmoments import mathmoments
+import math
+import statistics
 
 def organize_data(file):
     # Leitura do arquivo CSV extraído do MT5
@@ -61,38 +63,39 @@ def get_efficiency_ratio(prices, timeperiod=10, er_meanperiod=10):
     timeperiod = período de tempo - padrão 10
     retorna array efficieny ratio"""
     # Calcular a diferença entre os preços:
-    close_diff = abs(prices.diff())
-    net_change = abs(prices.diff(timeperiod))
-    
+    close_diff = abs(prices.diff()).tolist()
+    net_change = abs(prices.diff(timeperiod)).tolist()
+
     # Calcular o efficiency ratio utilizando a fórmula
     # ERt = |P(t) - P(t-n)| /  Sum(i=t-n, i=t)(|P(i) - P(i-1)|)
-    sum_change_diff = np.array([])
-    sum_change = np.array([])
-    er_mean = np.array([])
+    sum_change_diff = []
+    sum_change = []
+    er_mean = []
     for index in range(0, len(close_diff)):
     
         if index == 0:
-            sum_change_diff = np.append(sum_change_diff, np.nan)
+            sum_change_diff.append(math.nan)
         else:
             sum_change_diff_aux = abs(close_diff[index])
-            sum_change_diff = np.append(sum_change_diff, sum_change_diff_aux)
+            sum_change_diff.append(sum_change_diff_aux)
             
         if index < timeperiod:
-            sum_change = np.append(sum_change, np.nan)
+            sum_change.append(math.nan)
         else:
-            sum_change = np.append(sum_change, 
-                                np.sum(sum_change_diff[index-timeperiod+1:index+1]))
+            sum_change.append(sum(sum_change_diff[index-timeperiod+1:index+1]))
             
-    efficiency_ratio = net_change / sum_change
+    efficiency_ratio = np.divide(net_change,sum_change).tolist()
     
     for index in range(0, len(close_diff)):
         if index < er_meanperiod:
-            er_mean = np.append(er_mean, np.nan)
+            er_mean.append(math.nan)
         else:
-            er_mean = np.append(er_mean, 
-                                np.mean(efficiency_ratio[index-er_meanperiod+1:index+1]))
+            er_mean.append(statistics.mean(efficiency_ratio[index-er_meanperiod+1:index+1]))
     
-    return efficiency_ratio, er_mean
+    efficiency_ratio_data = {'efficiency_ratio': efficiency_ratio, 
+                             'er_mean': er_mean}
+    
+    return efficiency_ratio_data
 
 
 def get_stats(prices, timeperiod=10):
@@ -122,16 +125,15 @@ def get_stats(prices, timeperiod=10):
             kurt = np.append(kurt, kurt_aux)
             
     std = np.sqrt(variance)
+    
+    stats = {'mean': mean, 'std': std, 'skewness': skew, 'kurtosis': kurt}
                         
-    return mean, std, skew, kurt
+    return stats
 
-# Use to tests ->
+# # Use to tests ->
 # if __name__ == "__main__":
-#     file='data/PETR4_Daily_202112010000_202201210000.csv'
+#     file='data/Bra50Feb22_M5_202201261300_202201281500.csv'
 #     symbol_data = organize_data(file)
-#     efficiency_ratio, er_mean = get_efficiency_ratio(symbol_data['Close'], 20, 5)
-#     mean, std, skew, kurt = get_stats(symbol_data['Close'], 20)
-#     print(mean)
-#     print(std)
-#     print(skew)
-#     print(kurt)
+#     efficiency_ratio = get_efficiency_ratio(symbol_data['Close'], 20, 5)
+#     statistics = get_stats(symbol_data['Close'], 20)
+#     print(efficiency_ratio)
