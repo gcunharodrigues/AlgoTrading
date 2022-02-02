@@ -14,9 +14,9 @@ from api.dwx_client import dwx_client
 
 def inform_historic_data(MT4_files_dir, symbol, timeframe, start, end):
     dwx = dwx_client(metatrader_dir_path=MT4_files_dir)
-    sleep(1)
+    sleep(2)
     dwx.get_historic_data(symbol, timeframe, start, end)
-    sleep(5)
+    sleep(15)
     for st in dwx.historic_data.keys():
         print(st)
         on_historic_data(symbol, timeframe, dwx.historic_data[st])
@@ -28,7 +28,6 @@ def inform_historic_data(MT4_files_dir, symbol, timeframe, start, end):
                 historic_time_list.append(dwx.historic_data[st][k][data])
             
             historic_data_list.append(historic_time_list)
-    dwx.stop()
 
     return historic_data_list
                 

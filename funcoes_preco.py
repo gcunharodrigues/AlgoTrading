@@ -29,6 +29,7 @@ def organize_data(file):
         '<OPEN>': 'Open', 
         '<VOL>': 'Volume',
         '<TICKVOL>': 'TickVolume',
+        '<VOLUME>': 'RealVolume',
         '<SPREAD>': 'Spread',
         })
     

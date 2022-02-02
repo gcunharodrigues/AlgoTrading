@@ -1,0 +1,1 @@
+{'tf_1': 'M5', 'tf_2': 'M5', 'cci_period': 20, 'std_dev_period': 15, 'er_period': 8, 'skew_period': 15, 'shift': 0, 'er_1': 0.1, 'er_2': 1}
