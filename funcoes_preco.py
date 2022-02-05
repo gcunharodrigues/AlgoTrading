@@ -1,12 +1,12 @@
 # Bibliotecas a serem importadas:
 import pandas as pd
 import numpy as np
-from sklearn.decomposition import TruncatedSVD
 import talib
 from scipy import stats
 from mathmoments import mathmoments
 import math
 import statistics
+from datetime import datetime, timedelta
 
 def organize_data(file):
     # Leitura do arquivo CSV extraído do MT5
@@ -131,10 +131,129 @@ def get_stats(prices, timeperiod=10):
                         
     return stats
 
-# # Use to tests ->
-# if __name__ == "__main__":
-#     file='data/Bra50Feb22_M5_202201261300_202201281500.csv'
-#     symbol_data = organize_data(file)
-#     efficiency_ratio = get_efficiency_ratio(symbol_data['Close'], 20, 5)
-#     statistics = get_stats(symbol_data['Close'], 20)
-#     print(efficiency_ratio)
+def zigzag(prices, period=12, deviation=5, backstep=3, spread=0.01):
+    """"Enviar o dataframe eqty_table para a variável prices.
+    Os cálculos necessitarão de High and Low."""
+    low = prices['Low']
+    high = prices['High']
+    
+    zigzagbuffer = []
+    lowmapbuffer = []
+    highmapbuffer = []
+    
+    last_low = 0
+    last_high = 0
+    
+    extreme_search = 'extremum'
+    
+    # Searching for high and low extremes
+    for row in prices.index:
+        if row < period:
+            zigzagbuffer.append(0)
+            lowmapbuffer.append(0)
+            highmapbuffer.append(0)
+            continue
+        
+        zigzagbuffer.append(0)
+        lowmapbuffer.append(0)
+        highmapbuffer.append(0)
+        
+        # Low extremes
+        val = low.iloc[row+1-period:row+1].min()
+        if val == last_low:
+            val = 0
+        else:
+            last_low = val
+            if (low[row] - val) > deviation * spread:
+                val = 0
+            else:
+                for back in range(1, backstep+1):
+                    res = lowmapbuffer[row-back]
+                    if res != 0 and res > val:
+                        lowmapbuffer[row-back] = 0
+        if low[row] == val:
+            lowmapbuffer[row] = val
+        else:
+            lowmapbuffer[row] = 0
+                                
+        # High extremes
+        val = high.iloc[row+1-period:row+1].max()
+        if val == last_high:
+            val = 0
+        else:
+            if (val - high[row]) > deviation * spread:
+                val = 0
+            else:
+                for back in range(1, backstep+1):
+                    res = highmapbuffer[row-back]
+                    if res != 0 and res < val:
+                        highmapbuffer[row-back] = 0
+        if high[row] == val:
+            highmapbuffer[row] = val
+        else:
+            highmapbuffer[row] = 0
+            
+
+    last_low = 0
+    last_high = 0
+    
+    #ZigZag
+    for row in prices.index: 
+        #Extreme search
+        if extreme_search == 'extremum':
+            if highmapbuffer[row] != 0:
+                last_high = high[row]
+                last_high_pos = row
+                extreme_search = 'bottom'
+                zigzagbuffer[row] = last_high
+            if lowmapbuffer[row] != 0:
+                last_low = low[row]
+                last_low_pos = row
+                extreme_search = 'peak'
+                zigzagbuffer[row] = last_low
+            continue
+        
+        elif extreme_search == 'peak':
+            if lowmapbuffer[row] != 0 and lowmapbuffer[row] < last_low and \
+                highmapbuffer[row] == 0:
+                zigzagbuffer[last_low_pos] = 0
+                last_low_pos = row
+                last_low = lowmapbuffer[row]
+                zigzagbuffer[row] = last_low
+            if highmapbuffer[row] != 0 and lowmapbuffer[row] == 0:
+                last_high = highmapbuffer[row]
+                last_high_pos = row
+                zigzagbuffer[row] = last_high
+                extreme_search = 'bottom'
+            continue
+        
+        elif extreme_search == 'bottom':
+            if highmapbuffer[row] != 0 and highmapbuffer[row] > last_high and \
+                lowmapbuffer[row] == 0:
+                zigzagbuffer[last_high_pos] = 0
+                last_high_pos = row
+                last_high = highmapbuffer[row]
+                zigzagbuffer[row] = last_high
+            if lowmapbuffer[row] != 0 and highmapbuffer[row] == 0:
+                last_low = lowmapbuffer[row]
+                last_low_pos = row
+                zigzagbuffer[row] = last_low
+                extreme_search = 'peak' 
+            continue        
+
+    buffers = {'zigzag': zigzagbuffer, 'lows': lowmapbuffer, 
+               'highs': highmapbuffer}
+    
+    return buffers
+
+# Use to tests ->
+if __name__ == "__main__":
+    file='data/PETR4_M5.csv'
+    symbol_data = organize_data(file)
+    start = datetime(2021, 12, 22)
+    end = datetime(2021, 12, 31)
+    eqty_table = symbol_data.loc[(symbol_data['Date'] >= start) 
+            & (symbol_data['Date'] <= end)].copy()
+    eqty_table.reset_index(inplace=True, drop=True)
+    zigzag_data = zigzag(eqty_table)
+    print(zigzag_data['zigzag'])
